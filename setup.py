@@ -7,5 +7,9 @@ setuptools.setup(
         "paho-mqtt==1.5.1",
         "bleak==0.10.0"
     ],
-    tests_require=["pytest"]
+    tests_require=[
+        "pytest",
+        "flake8",
+        "mypy"
+    ]
 )
