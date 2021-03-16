@@ -3,6 +3,7 @@ import asyncio
 from bleak import BleakClient
 from bleak.exc import BleakError
 from typing import List
+from retrying_async import retry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,22 +23,21 @@ class SwitchbotDevice:
         inner_loop.run_until_complete(self._execute(command))
         inner_loop.close()
 
+    @retry(attempts=3, delay=3)
     async def _execute(self, command):
         bleak_client = None
         try:
             bleak_client = await self._connect()
             if command:
                 await bleak_client.write_gatt_char(UUID, bytearray(command))
-
-                res = "await bleak_client.read_gatt_char(UUID)"
-                self.set_device_status(res)
             else:
                 _LOGGER.error("Noting to execute")
         except BleakError as e:
             _LOGGER.error(f"Failed to execute. Error: {e}")
             raise ExecutionError
         finally:
-            await bleak_client.disconnect()
+            if bleak_client:
+                await bleak_client.disconnect()
 
     async def _connect(self):
         try:
@@ -71,6 +71,8 @@ class Curtain(SwitchbotDevice):
                 self.position = 100
                 return [0x57, 0x0f, 0x45, 0x01, 0x05, self.mode, 0x64]
             elif payload == b"STOP":
+                # todo: fetch the actual position when stopped
+                self.position = 50
                 return [0x57, 0x0f, 0x45, 0x01, 0x00, 0xFF]
             else:
                 position = int(payload)
