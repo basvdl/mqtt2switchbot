@@ -1,0 +1,10 @@
+---
+version: "3.8"
+
+services:
+  mqtt2switchbot:
+    image: mqtt2switchbot
+    network_mode: host
+    container_name: mqtt2switchbot
+    privileged: true
+    restart: unless-stopped
